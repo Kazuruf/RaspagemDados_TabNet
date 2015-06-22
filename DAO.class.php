@@ -119,6 +119,8 @@ class DAO {
 		if(!empty($filtro["urt_urs_id_in"])) {
 			$sql .= " AND urt.urt_urs_id IN (" . $filtro["urt_urs_id_in"] .") ";
 		}
+		
+		#print $sql."<br>";
 	
 		$result = mysql_query($sql);
 		$arrVal = array();
@@ -283,12 +285,14 @@ class DAO {
 	 */
 	public function getFiltros($filtro = null) {
 		
-		$sql = "SELECT fv.fiv_id, ft.fit_form_name, fv.fiv_value
+		$sql = "SELECT fv.fiv_id, 
+						REPLACE(ft.fit_form_name, '\"', '') AS fit_form_name,  
+						REPLACE(fv.fiv_value, ' SELECTED', '') AS fiv_value
 				FROM filtro_tipo ft
 					INNER JOIN filtro_value fv ON ft.fit_id = fv.fiv_fit_id 
 				WHERE 1=1 ";
 		
-		$sql .= " AND ft.fit_form_name <> '\"Arquivos\"' ";
+		//$sql .= " AND ft.fit_form_name <> '\"Arquivos\"' ";
 		
 		if(!empty($filtro["fit_urt_id"])) {
 			$sql .= " AND ft.fit_urt_id = '" . $filtro["fit_urt_id"] ."' ";
@@ -306,6 +310,161 @@ class DAO {
 		
 		return $arrVal;
 		
+	}
+	
+	
+	/**
+	 * Metodo para pegar os dados inseridos na resultado_header
+	 * @param string $filtros
+	 */
+	public function getResultadoHeader($filtro=null) {
+		
+		$sql = "SELECT * FROM resultado_header reh where 1=1";
+	
+		if(!empty($filtro["reh_id"])) {
+			$sql .= " AND reh.reh_id = '" . $filtro["reh_id"] ."' ";
+		}
+		
+		if(!empty($filtro["reh_titulo"])) {
+			$sql .= " AND reh.reh_titulo = '" . $filtro["reh_titulo"] ."' ";
+		}
+		
+		if(!empty($filtro["reh_sub_titulo"])) {
+			$sql .= " AND reh.reh_sub_titulo = '" . $filtro["reh_sub_titulo"] ."' ";
+		}
+	
+		if(!empty($filtro["reh_periodo"])) {
+			$sql .= " AND reh.reh_periodo = '" . $filtro["reh_periodo"] ."' ";
+		}
+		
+		if(!empty($filtro["reh_tipo"])) {
+			$sql .= " AND reh.reh_tipo = '" . $filtro["reh_tipo"] ."' ";
+		}
+		
+		$result = mysql_query($sql);
+		$row = mysql_fetch_row($result);
+		
+		return $row[0];
+		
+	}
+	
+	
+	/**
+	 * Metodo para gravar no banco de dados
+	 * @param unknown $dados
+	 */
+	public function saveResultadoHeader($dados) {
+	
+		$sql = "insert into resultado_header (	reh_titulo,
+												reh_sub_titulo,
+												reh_periodo,
+												reh_tipo)
+									values ('".$dados["reh_titulo"]."',
+											'".$dados["reh_sub_titulo"]."',
+											'".$dados["reh_periodo"]."',
+											'".$dados["reh_tipo"]."');";
+				
+		$result = mysql_query($sql);	
+		return mysql_insert_id();
+	
+	}
+	
+	
+	/**
+	 * Metodo para pegar os dados inseridos na resultado_header
+	 * @param string $filtros
+	 */
+	public function getResultadoColuna($filtro=null) {
+	
+		$sql = "SELECT * FROM resultado_coluna rec where 1=1";
+	
+		if(!empty($filtro["rec_id"])) {
+			$sql .= " AND rec.rec_id = '" . $filtro["rec_id"] ."' ";
+		}
+		
+		if(!empty($filtro["rec_reh_id"])) {
+			$sql .= " AND rec.rec_reh_id = '" . $filtro["rec_reh_id"] ."' ";
+		}
+		
+		if(!empty($filtro["rec_descricao"])) {
+			$sql .= " AND rec.rec_descricao = '" . $filtro["rec_descricao"] ."' ";
+		}
+		#print $sql;
+		$result = mysql_query($sql);
+		$row = mysql_fetch_row($result);
+	
+		return $row[0];
+	
+	}
+	
+	
+	/**
+	 * Metodo para gravar no banco de dados
+	 * @param unknown $dados
+	 */
+	public function saveResultadoColuna($dados) {
+		
+		$sql = "insert into resultado_coluna (	rec_reh_id,
+												rec_descricao)
+									values ('".$dados["rec_reh_id"]."',
+											'".$dados["rec_descricao"]."');";
+		#print $sql;
+		$result = mysql_query($sql);
+		return mysql_insert_id();
+	
+	}
+	
+	
+	/**
+	 * Metodo para pegar os dados inseridos na resultado
+	 * @param string $filtros
+	 */
+	public function getResultado($filtro=null) {
+	
+		$sql = "SELECT * FROM resultado res where 1=1";
+	
+		if(!empty($filtro["res_id"])) {
+			$sql .= " AND res.res_id = '" . $filtro["res_id"] ."' ";
+		}
+	
+		if(!empty($filtro["res_rec_id"])) {
+			$sql .= " AND res.res_rec_id = '" . $filtro["res_rec_id"] ."' ";
+		}
+	
+		if(!empty($filtro["res_descricao"])) {
+			$sql .= " AND res.res_descricao = '" . $filtro["res_descricao"] ."' ";
+		}
+		
+		if(!empty($filtro["res_valor"])) {
+			$sql .= " AND res.res_valor = '" . $filtro["res_valor"] ."' ";
+		}
+		
+		#print $sql;
+		$result = mysql_query($sql);
+		$row = mysql_fetch_row($result);
+	
+		return $row[0];
+	
+	}
+
+
+	/**
+	* Metodo para gravar no banco de dados
+	 * @param unknown $dados
+	 */
+	 public function saveResultado($dados) {
+
+		$sql = "insert into resultado (	res_rec_id,
+										res_descricao,
+										res_valor)
+								values ('".$dados["res_rec_id"]."',
+										'".$dados["res_descricao"]."',
+										'".$dados["res_valor"]."');";
+		
+		#print $sql;
+		$result = mysql_query($sql);
+		return mysql_insert_id();
+
 	}
 	
 	
