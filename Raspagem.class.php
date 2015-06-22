@@ -435,6 +435,7 @@ class Raspagem {
 		$filtroT["urt_urs_id"] = 1;
 		$filtroT["urt_id"] = 1;
 		$arrUrlTer = $this->dao->getUrlTerciaria($filtroT);
+		
 		//varre as urls
 		foreach($arrUrlTer as $ut_id => $ut_path) {
 			
@@ -442,28 +443,93 @@ class Raspagem {
 			$url = "http://tabnet.datasus.gov.br/cgi/tabcgi.exe?".$arrUrl[1];
 					
 			//pega as variaveis de cada url terciaria
-			/*$filtroFT["fit_urt_id"] = $ut_id;
+			$filtroFT["fit_urt_id"] = $ut_id;
 			$arrFiltrosValue = $this->dao->getFiltros($filtroFT);
 			
-			#monta o array com os filtros
+			#monta o array com os filtros posts para procurar no link
 			$arrFiltros = array();
-			foreach ($arrFiltrosValue as $filtros) 				
-				$arrFiltros[$filtros["fit_form_name"]][$filtros["fiv_id"]] = $filtros["fiv_value"];
+			foreach ($arrFiltrosValue as $filtros) { 				
+				//$arrFiltros[$filtros["fit_form_name"]][$filtros["fiv_id"]] = $filtros["fiv_value"];
+				
+				if($filtros["fit_form_name"] == "Arquivos") {
+					$arrArquivos[$filtros["fiv_id"]] = trim($filtros["fiv_value"]);
+				}
+				
+				if($filtros["fit_form_name"] == "Linha") {
+					$arrLinha[$filtros["fiv_id"]] = trim($filtros["fiv_value"]);
+				}
+				
+				#if($filtros["fit_form_name"] == "Coluna") {
+				#	$arrColuna[$filtros["fiv_id"]] = trim($filtros["fiv_value"]);
+				#}
+				
+				if($filtros["fit_form_name"] == "Incremento") {
+					$arrConteudo[$filtros["fiv_id"]] = trim($filtros["fiv_value"]);
+				}
+				
+			}
 			
-			
+			$count = 1;
+			$countLinha = 1;
 			#monta os posts
-			foreach ($arrFiltros as $form => $values) {
-				print $form."<br>";
+			foreach ($arrArquivos as $arqId => $arqValor) {
+								
+				if($count == 3)
+					exit;
+				
+				#pega a base que vai pesquisar
+				$arquivo = "&Arquivos=".$arqValor;
+				
+				foreach ($arrLinha as $linhaId => $linhaValor) {
+					
+					
+					$linha = "&Linha=".$linhaValor;
+					
+					#foreach($arrColuna as $colunaId => $colunaValor) {
+						#$coluna = "&Coluna=" . $colunaValor;
+						
+					$coluna = "&Coluna=--Não-Ativa--";
+					
+					foreach ($arrConteudo as $conteudoId => $conteudoValor) {
+						
+						$incremento = "&Incremento=".$conteudoValor;
+						
+						
+						##monta o post
+						$variaveis = $variaveis = "formato=prn&mostre=Mostra".$arquivo.$linha.$coluna.$incremento;
+						
+						#busca os dados na pagina, com o post
+						$dados = $this->getResultado($url, $variaveis);
+						
+						#trabalha os dados para inserir no banco
+						$this->trataDados($dados);
+						
+						#exit;
+					}
+					
+					#}
+					print "LINHA: " . $countLinha . " INSERIDA COM SUCESSO!";
+					print "<br>";
+					$countLinha++;
+				}
+				
+				$count++;
+				$countLinha = 1;
 					
 			}
-			#print_r($arrFiltros);*/
+			##print_r($arrFiltros);
+			#exit;
+			#$variaveis = "formato=prn&mostre=Mostra&Arquivos=nvuf12.dbf&Linha=Região&Coluna=--Não-Ativa--&Incremento=Nascim_p/resid.mãe&SRegião=1&SLocal_ocorrência=3";
+
+			#print $url . "-" . $variaveis . "<br>";
 			
-			$variaveis = "formato=prn&mostre=Mostra&Arquivos=nvuf12.dbf&Linha=Região&Coluna=--Não-Ativa--&Incremento=Nascim_p/resid.mãe&SRegião=1&SLocal_ocorrência=3"; 
-			$dados = $this->getResultado($url, $variaveis);
+			//$dados = $this->getResultado($url, $variaveis);
 			
-			print_r($dados);
+			//print_r($dados);
 			
 		}
+		
+		exit;
 		
 		$this->closeConn();
 		
@@ -475,7 +541,8 @@ class Raspagem {
 	private function getResultado($url, $variaveis) {
 	
 		//$variaveis = "Linha=Regi%E3o&Coluna=--N%E3o-Ativa--&Incremento=Nascim_p%2Fresid.m%E3e&Arquivos=nvuf12.dbf&SRegi%E3o=TODAS_AS_CATEGORIAS__&pesqmes2=Digite+o+texto+e+ache+f%E1cil&SUnidade_da_Federa%E7%E3o=TODAS_AS_CATEGORIAS__&SLocal_ocorr%EAncia=TODAS_AS_CATEGORIAS__&pesqmes4=Digite+o+texto+e+ache+f%E1cil&SIdade_da_m%E3e=TODAS_AS_CATEGORIAS__&pesqmes5=Digite+o+texto+e+ache+f%E1cil&SInstru%E7%E3o_da_m%E3e=TODAS_AS_CATEGORIAS__&SEstado_civil_m%E3e=TODAS_AS_CATEGORIAS__&SDura%E7%E3o_gesta%E7%E3o=TODAS_AS_CATEGORIAS__&STipo_de_gravidez=TODAS_AS_CATEGORIAS__&STipo_de_parto=TODAS_AS_CATEGORIAS__&SConsult_pr%E9-natal=TODAS_AS_CATEGORIAS__&SSexo=TODAS_AS_CATEGORIAS__&SCor%2Fra%E7a=TODAS_AS_CATEGORIAS__&SApgar_1%BA_minuto=TODAS_AS_CATEGORIAS__&SApgar_5%BA_minuto=TODAS_AS_CATEGORIAS__&SPeso_ao_nascer=TODAS_AS_CATEGORIAS__&SAnomalia_cong%EAnita=TODAS_AS_CATEGORIAS__&pesqmes17=Digite+o+texto+e+ache+f%E1cil&STipo_anomal_cong%EAn=TODAS_AS_CATEGORIAS__&formato=prn&mostre=Mostra";
-		print $url."+++++++++++++".$variaveis;
+		#print $url."+++++++++++++".$variaveis;
+		
 		//se consecta na maquina
 		curl_setopt($this->ch, CURLOPT_URL, $url);
 	
@@ -486,12 +553,136 @@ class Raspagem {
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS,$variaveis);
 	
 		// Executa a requisição
-		$dados = curl_exec ($this->ch);
-	
-		print_r($dados);exit;
+		$html = curl_exec ($this->ch);
+				
+		##pega a posicao inicia e final da parte da string
+		$posInicial = strpos($html, "<H1 ");
+		$posFinal 	= strpos($html, "</PRE");
+		$qtdChar = $posFinal - $posInicial;
+		
+		#recorta o pedaco que vai querer
+		$htmlRecortado = substr($html, $posInicial, $qtdChar);
+		#limpa os htmls restantes
+		$limpeza = str_replace('<H1 CLASS="Nivel0">', '', $htmlRecortado);
+		$limpeza = str_replace('</H1>', '', $limpeza);
+		$limpeza = str_replace('<b>', '', $limpeza);
+		$limpeza = str_replace('</b>', '', $limpeza);
+		$limpeza = str_replace('<B>', '', $limpeza);
+		$limpeza = str_replace('</B>', '', $limpeza);
+		$limpeza = str_replace('<br>', '', $limpeza);
+		$limpeza = str_replace('<BR>', '', $limpeza);
+		$dados = str_replace('<PRE>', '', $limpeza);
+		#separa em array os dados
+		$dados = explode("\r\n",$dados);
+						
+		#print_r($dados);
+		#exit;
 		
 		return $dados;
 	
 	}
+	
+	
+	/**
+	 * Classe para trabalhar os dados e armazer os resultados 
+	 * 
+	 */
+	private function trataDados($dados) {
+		
+		#verifica a quantidade de linhas
+		$qtdLinhas = (count($dados) - 4);
+		
+		#header
+		$titulo = trim($dados[0]);
+		$subtitulo = trim($dados[1]);
+		$periodo = explode(":", $dados[2]);
+		$periodo = trim($periodo[1]); 
+		
+		#coluna, onde o indice 0 vai para a tabela resultado_header
+		$arrColunas = explode('";"',$dados[3]);
+		$tipo = str_replace('"', '', $arrColunas[0]); 
+		
+		##verifica se ja existe
+		$fHeader["reh_titulo"] = $titulo;
+		$fHeader["reh_sub_titulo"] = $subtitulo;
+		$fHeader["reh_periodo"] = $periodo;
+		$fHeader["reh_tipo"] = $tipo;
+		$idResultadoHeader = $this->dao->getResultadoHeader($fHeader); 
+		
+		#caso nao exista insere na tabela
+		if (empty($idResultadoHeader)) {
+			
+			##insere na tabela resultado_header
+			##recupera o id para inserir nas colunas
+			$idResultadoHeader = $this->dao->saveResultadoHeader($fHeader);
+			
+		}
+		
+		##varre as colunas a partir do indice 1
+		foreach($arrColunas as $keyColuna => $valueColuna) {
+			
+			if($keyColuna != 0) {
+				##trata o valor
+				$descricao = str_replace('"', '', $valueColuna); 
+				
+				##busca na tabela para ver se já não existe uma coluna com a descricao
+				$fColuna["rec_descricao"] = $descricao;
+				$fColuna["rec_reh_id"] = $idResultadoHeader;
+				$idResultadoColuna = $this->dao->getResultadoColuna($fColuna);
+				
+				if(empty($idResultadoColuna)) {
+					#insere na tabela resultado_coluna
+					$idResultadoColuna = $this->dao->saveResultadoColuna($fColuna);
+				}
+				
+				#armazena os ids por indices
+				$arrColunasNova[$keyColuna] = $idResultadoColuna;
+			}
+			
+		}
+		
+		#pega as linhas a partir do 4 indice
+		for($i=4;$i<=$qtdLinhas;$i++) {
+			#monta o array de linhas e separa para insercao dos dados e linha
+			# o indice 0 representa a variavel, e o indice 1 para frenterepresenta o valor
+			$arrLinhas = explode('";',$dados[$i]);
+			
+			##varres os valores
+			foreach($arrLinhas as $keyLinha => $valueLinha) {
+				
+				if($keyLinha == 0) {
+					$descricao = str_replace('"', '', $valueLinha);
+				} else {
+					##explode quando for array o resultado
+					$valoresLinha = explode(";",$valueLinha);
+					
+					#varre os valores finais
+					foreach($valoresLinha as $keyResultado => $valueResultado) {
+						
+						##pega o valor do resultado da página, e verifica se esta com "-"
+						$valor = ($valueResultado == "-") ? "0" : $valueResultado;
+						
+						##soma 1 para poder acompanhar os indices das colunas que utiliza o 0,
+						##pois quando utilizamos o explode por padrão começa com 0 os indices do array
+						$idColuna = $arrColunasNova[$keyResultado+1];
+						
+						##verifica se ja existe na tabela
+						$fRes["res_rec_id"] = $idColuna;
+						$fRes["res_descricao"] = $descricao;
+						$fRes["res_valor"] = $valor;
+						$idResultado = $this->dao->getResultado($fRes);
+						
+						if(empty($idResultado)) {
+							##monta a inserção e insere na tabela resultado
+							$idResultado = $this->dao->saveResultado($fRes);
+						}
+					} ##fim foreach valoresLinha
+				} ## fim if / else
+				
+			} ##fim foreach
+			
+		} ## fim for
+		
+	} ## fim metodo trataDados
 	
 }// fim class
